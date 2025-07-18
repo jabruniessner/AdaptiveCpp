@@ -1,5 +1,6 @@
 #include <chrono>
 #include <cstddef>
+#include <cstdlib>
 #include <dlfcn.h>
 #include <iostream>
 #include <list>
@@ -259,18 +260,6 @@ void tracer_funcs::set_tracer_equal_num() {
   }
 #endif
 
-  if (this->finalize.size() == this->size - 1) {
-    this->finalize.push_back(nullptr);
-  }
-
-#ifdef DEBUG_TRACER_LEVEL
-  if (this->finalize.size() < this->size - 1) {
-    std::cout << "Error: Number of submit start function pointers smaller "
-                 "than number tracer files"
-              << std::endl;
-  }
-#endif
-
   if (this->states.size() == this->size - 1) {
     this->states.push_back(nullptr);
   }
@@ -278,6 +267,78 @@ void tracer_funcs::set_tracer_equal_num() {
 #ifdef DEBUG_TRACER_LEVEL
   if (this->states.size() < this->size - 1) {
     std::cout << "Error: Number of submit start function pointers smaller "
+                 "than number tracer files"
+              << std::endl;
+  }
+#endif
+
+  if (this->malloc_device_start.size() == this->size - 1) {
+    this->malloc_device_start.push_back(nullptr);
+  }
+
+#ifdef DEBUG_TRACER_LEVEL
+  if (this->malloc_device_start.size() < this->size - 1) {
+    std::cout << "Error: Number of malloc_start_start function pointers smaller "
+                 "than number tracer files"
+              << std::endl;
+  }
+#endif
+
+  if (this->malloc_shared_start.size() == this->size - 1) {
+    this->malloc_shared_start.push_back(nullptr);
+  }
+
+#ifdef DEBUG_TRACER_LEVEL
+  if (this->malloc_shared_start.size() < this->size - 1) {
+    std::cout << "Error: Number of malloc_shared_start function pointers smaller "
+                 "than number tracer files"
+              << std::endl;
+  }
+#endif
+
+  if (this->malloc_host_start.size() == this->size - 1) {
+    this->malloc_host_start.push_back(nullptr);
+  }
+
+#ifdef DEBUG_TRACER_LEVEL
+  if (this->malloc_host_start.size() < this->size - 1) {
+    std::cout << "Error: Number of malloc_host_start function pointers smaller "
+                 "than number tracer files"
+              << std::endl;
+  }
+#endif
+
+  if (this->malloc_device_end.size() == this->size - 1) {
+    this->malloc_device_end.push_back(nullptr);
+  }
+
+#ifdef DEBUG_TRACER_LEVEL
+  if (this->malloc_device_end.size() < this->size - 1) {
+    std::cout << "Error: Number of malloc_end_end function pointers smaller "
+                 "than number tracer files"
+              << std::endl;
+  }
+#endif
+
+  if (this->malloc_shared_end.size() == this->size - 1) {
+    this->malloc_shared_end.push_back(nullptr);
+  }
+
+#ifdef DEBUG_TRACER_LEVEL
+  if (this->malloc_shared_end.size() < this->size - 1) {
+    std::cout << "Error: Number of malloc_shared_end function pointers smaller "
+                 "than number tracer files"
+              << std::endl;
+  }
+#endif
+
+  if (this->malloc_host_end.size() == this->size - 1) {
+    this->malloc_host_end.push_back(nullptr);
+  }
+
+#ifdef DEBUG_TRACER_LEVEL
+  if (this->malloc_host_end.size() < this->size - 1) {
+    std::cout << "Error: Number of malloc_host_end function pointers smaller "
                  "than number tracer files"
               << std::endl;
   }
@@ -299,7 +360,7 @@ tracer_funcs::tracer_funcs() {
     for (std::string single_lib; std::getline(path_stream, single_lib, ':');) {
       // std::cout << "Library: " << single_lib << std::endl;
 
-      void *so_lib = dlopen(single_lib.c_str(), RTLD_NOW | RTLD_LOCAL);
+      void *so_lib = dlopen(single_lib.c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE);
 
       if (so_lib) {
         // std::cout << "found library" << std::endl;
@@ -317,18 +378,13 @@ tracer_funcs::tracer_funcs() {
         }
       } else {
         std::cout << "Warning: could not find library " << single_lib << std::endl;
+        std::cerr << dlerror() << std::endl;
       }
     }
   }
-
-  is_init = true;
 }
 
-tracer_funcs::~tracer_funcs() {
-  for (int i = this->size - 1; i >= 0; i--)
-    if (this->finalize[i] != nullptr)
-      this->finalize[i](this->states[i]);
-}
+tracer_funcs::~tracer_funcs() {}
 
 tracer_funcs tracer_state;
 

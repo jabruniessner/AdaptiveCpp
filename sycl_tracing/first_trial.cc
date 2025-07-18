@@ -15,8 +15,7 @@ int main() {
 
   auto dev = q.get_device();
 
-  std::cout << "Running on device: " << dev.get_info<sycl::info::device::name>()
-            << std::endl;
+  std::cout << "Running on device: " << dev.get_info<sycl::info::device::name>() << std::endl;
 
   // Tracer_utils::initialize_tracer(cool_tracer);
 
@@ -46,9 +45,7 @@ int main() {
      });
    }).wait();
 
-  q.parallel_for(sycl::range<1>(10), [=](sycl::id<1> I) {
-     const int i = 0;
-   }).wait();
+  q.parallel_for(sycl::range<1>(10), [=](sycl::id<1> I) { const int i = 0; }).wait();
 
   std::cout << "Hello World!" << std::endl;
 }

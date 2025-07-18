@@ -2,7 +2,9 @@
 
 #include "tracer_utils.hpp"
 #include <chrono>
+#include <cstdlib>
 #include <dlfcn.h>
+#include <memory>
 #include <vector>
 
 #ifndef TRACER_UTILS_INTERNAL_H
@@ -16,6 +18,7 @@ struct tracer_funcs {
 
   tracer_funcs();
   ~tracer_funcs();
+  // void tracer_funcs_at_exit();
 
   void set_tracer_equal_num();
 
@@ -40,7 +43,14 @@ struct tracer_funcs {
   std::vector<tracer_function_t> fill_end;
   std::vector<tracer_function_t> copy_start;
   std::vector<tracer_function_t> copy_end;
-  std::vector<finalizer_function_t> finalize;
+  std::vector<tracer_function_t> malloc_device_start;
+  std::vector<malloc_function_t> malloc_device_end;
+  std::vector<tracer_function_t> malloc_host_start;
+  std::vector<malloc_function_t> malloc_host_end;
+  std::vector<tracer_function_t> malloc_shared_start;
+  std::vector<malloc_function_t> malloc_shared_end;
+  std::vector<tracer_function_t> free_start;
+  std::vector<malloc_function_t> free_end;
   std::vector<void *> states;
 };
 
