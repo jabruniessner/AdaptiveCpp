@@ -139,7 +139,6 @@ inline void *malloc_host(std::size_t num_bytes, const context &ctx,
   }
 
   rt::allocation_hints hints = create_hints_from_proplist(propList);
-  return rt::allocate_host(detail::select_usm_allocator(ctx), 0, num_bytes, hints);
   auto return_pointer = rt::allocate_host(detail::select_usm_allocator(ctx), 0, num_bytes, hints);
 
   for (int i = 0; i < Tracer_utils::tracer_state.size; i++) {
@@ -177,7 +176,6 @@ inline void *malloc_shared(std::size_t num_bytes, const device &dev, const conte
   }
 
   rt::allocation_hints hints = create_hints_from_proplist(propList);
-  return rt::allocate_shared(detail::select_usm_allocator(ctx, dev), num_bytes, hints);
   auto return_pointer =
       rt::allocate_shared(detail::select_usm_allocator(ctx, dev), num_bytes, hints);
 
@@ -327,17 +325,25 @@ inline void free(void *ptr, const sycl::context &ctx) {
   }
 
   if (ptr != nullptr)
-    return rt::deallocate(detail::select_usm_allocator(ctx), ptr);
+    rt::deallocate(detail::select_usm_allocator(ctx), ptr);
+
+  for (int i = 0; i < Tracer_utils::tracer_state.size; i++) {
+    if (Tracer_utils::tracer_state.free_end[i] != nullptr) {
+      Tracer_utils::tracer_state.free_end[i](Tracer_utils::tracer_state.states[i], ptr);
+    }
+  }
+
+  return;
 }
 
 inline void free(void *ptr, const sycl::queue &q) {
   free(ptr, q.get_context());
-  for (int i = 0; i < Tracer_utils::tracer_state.size; i++) {
-    if (Tracer_utils::tracer_state.free_end[i] != nullptr) {
-      Tracer_utils::tracer_state.free_end[i](Tracer_utils::tracer_state.states[i],
-                                             Tracer_utils::tracer_state.states[i]);
-    }
-  }
+  //  for (int i = 0; i < Tracer_utils::tracer_state.size; i++) {
+  //    if (Tracer_utils::tracer_state.free_end[i] != nullptr) {
+  //      Tracer_utils::tracer_state.free_end[i](Tracer_utils::tracer_state.states[i],
+  //                                             Tracer_utils::tracer_state.states[i]);
+  //    }
+  //  }
 
   return;
 }
