@@ -64,11 +64,11 @@ void init_malloc_device_start(tracer_function_t usr_func) {
 }
 
 // Defining the initializers for the end functions
-void init_submit_end(tracer_function_t usr_func) {
+void init_submit_end(tracer_function_submit_t usr_func) {
   Tracer_utils::tracer_state.submit_end.push_back(usr_func);
 }
 
-void init_submit_secondary_end(tracer_function_t usr_func) {
+void init_submit_secondary_end(tracer_function_submit_t usr_func) {
   Tracer_utils::tracer_state.submit_secondary_end.push_back(usr_func);
 }
 

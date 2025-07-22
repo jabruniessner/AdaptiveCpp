@@ -24,9 +24,9 @@ struct tracer_funcs {
 
   std::size_t size = 0;
   std::vector<tracer_function_t> submit_start;
-  std::vector<tracer_function_t> submit_end;
+  std::vector<tracer_function_submit_t> submit_end;
   std::vector<tracer_function_t> submit_secondary_start;
-  std::vector<tracer_function_t> submit_secondary_end;
+  std::vector<tracer_function_submit_t> submit_secondary_end;
   std::vector<tracer_function_t> parallel_for_start;
   std::vector<tracer_function_t> parallel_for_end;
   std::vector<tracer_function_t> parallel_for_work_group_start;

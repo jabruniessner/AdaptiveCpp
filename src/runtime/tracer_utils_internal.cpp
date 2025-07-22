@@ -343,6 +343,30 @@ void tracer_funcs::set_tracer_equal_num() {
               << std::endl;
   }
 #endif
+
+  if (this->free_end.size() == this->size - 1) {
+    this->free_end.push_back(nullptr);
+  }
+
+#ifdef DEBUG_TRACER_LEVEL
+  if (this->free_end.size() < this->size - 1) {
+    std::cout << "Error: Number of free_end function pointers smaller "
+                 "than number tracer files"
+              << std::endl;
+  }
+#endif
+
+  if (this->free_start.size() == this->size - 1) {
+    this->free_start.push_back(nullptr);
+  }
+
+#ifdef DEBUG_TRACER_LEVEL
+  if (this->free_start.size() < this->size - 1) {
+    std::cout << "Error: Number of free_start function pointers smaller "
+                 "than number tracer files"
+              << std::endl;
+  }
+#endif
 }
 
 tracer_funcs::tracer_funcs() {

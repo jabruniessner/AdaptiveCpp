@@ -35,6 +35,7 @@ void initialize_tracer(void (*func)(tracer_start_end), tracer_type, void *);
 
 typedef void (*tracer_function_t)(void *state);
 typedef void (*malloc_function_t)(void *state, void *ptr);
+typedef void (*tracer_function_submit_t)(void *state, void *event_ptr);
 typedef void (*finalizer_function_t)(void *);
 
 void init_state(void *usr_state);
@@ -54,8 +55,8 @@ void init_malloc_host_start(tracer_function_t);
 void init_malloc_shared_start(tracer_function_t);
 void init_free_start(tracer_function_t);
 
-void init_submit_end(tracer_function_t);
-void init_submit_secondary_end(tracer_function_t);
+void init_submit_end(tracer_function_submit_t);
+void init_submit_secondary_end(tracer_function_submit_t);
 void init_parallel_for_end(tracer_function_t);
 void init_parallel_for_work_group_end(tracer_function_t);
 void init_single_task_end(tracer_function_t);
