@@ -422,7 +422,7 @@ public:
     for (int i = 0; i < Tracer_utils::tracer_state.size; i++) {
       if (Tracer_utils::tracer_state.submit_end[i] != nullptr)
         Tracer_utils::tracer_state.submit_end[i](Tracer_utils::tracer_state.states[i],
-                                                 &return_event);
+                                                 &return_event, this);
     }
 
     return return_event;
@@ -467,7 +467,7 @@ public:
         for (int i = 0; i < Tracer_utils::tracer_state.size; i++) {
           if (Tracer_utils::tracer_state.submit_secondary_end[i] != nullptr)
             Tracer_utils::tracer_state.submit_secondary_end[i](Tracer_utils::tracer_state.states[i],
-                                                               &evt);
+                                                               &evt, this);
         }
 
         return evt;
@@ -478,7 +478,7 @@ public:
         for (int i = 0; i < Tracer_utils::tracer_state.size; i++) {
           if (Tracer_utils::tracer_state.submit_secondary_end[i] != nullptr)
             Tracer_utils::tracer_state.submit_secondary_end[i](Tracer_utils::tracer_state.states[i],
-                                                               &evt);
+                                                               &evt, this);
         }
 
         return evt;
@@ -490,7 +490,7 @@ public:
       for (int i = 0; i < Tracer_utils::tracer_state.size; i++) {
         if (Tracer_utils::tracer_state.submit_secondary_end[i] != nullptr)
           Tracer_utils::tracer_state.submit_secondary_end[i](Tracer_utils::tracer_state.states[i],
-                                                             &evt);
+                                                             &evt, this);
       }
 
       return evt;
