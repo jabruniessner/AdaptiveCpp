@@ -15,15 +15,18 @@
 #include <memory>
 #include <vector>
 
-#include "types.hpp"
-#include "platform.hpp"
 #include "device.hpp"
 #include "device_selector.hpp"
-#include "info/info.hpp"
 #include "exception.hpp"
+#include "info/info.hpp"
+#include "platform.hpp"
+#include "types.hpp"
 
-#include "hipSYCL/runtime/device_list.hpp"
 #include "hipSYCL/glue/error.hpp"
+#include "hipSYCL/runtime/device_list.hpp"
+#include "hipSYCL/sycl/tracer_macros.h"
+#include "hipSYCL/sycl/tracer_utils.hpp"
+#include "hipSYCL/sycl/tracer_utils_internal.hpp"
 
 namespace hipsycl {
 namespace sycl {
@@ -31,34 +34,31 @@ namespace sycl {
 class context;
 
 namespace detail {
-const rt::unique_device_list& extract_context_devices(const context&);
+const rt::unique_device_list &extract_context_devices(const context &);
 
-struct default_context_tag_t{};
-}
+struct default_context_tag_t {};
+} // namespace detail
 
-class context
-{
+class context {
 public:
   friend class queue;
 
-  friend const rt::unique_device_list &
-  detail::extract_context_devices(const context &);
+  friend const rt::unique_device_list &detail::extract_context_devices(const context &);
 
-  explicit context(async_handler handler = [](exception_list e) {
-    glue::default_async_handler(e);
-  }) : context{detail::select_devices(default_selector_v), handler} {}
+  explicit context(async_handler handler = [](exception_list e) { glue::default_async_handler(e); })
+      : context{detail::select_devices(default_selector_v), handler} {}
 
   explicit context(
-      const device &dev, async_handler handler = [](exception_list e) {
-        glue::default_async_handler(e);
-      }) {
+      const device &dev,
+      async_handler handler = [](exception_list e) { glue::default_async_handler(e); }) {
     this->init(handler, dev);
+
+    TRACER_FUNCTION2ARG(context_construction, this->AdaptiveCpp_hash_code());
   }
 
   explicit context(
-      const platform &plt, async_handler handler = [](exception_list e) {
-        glue::default_async_handler(e);
-      }) {
+      const platform &plt,
+      async_handler handler = [](exception_list e) { glue::default_async_handler(e); }) {
     this->init(handler);
     std::vector<device> devices = plt.get_devices();
     for (const auto &dev : devices) {
@@ -66,57 +66,83 @@ public:
     }
     // Always need to add the host device
     _impl->devices.add(detail::get_host_device());
+
+    TRACER_FUNCTION2ARG(context_construction, this->AdaptiveCpp_hash_code());
   }
 
   explicit context(
       const std::vector<device> &deviceList,
-      async_handler handler = [](exception_list e) {
-        glue::default_async_handler(e);
-      }) {
-    
-    if(deviceList.empty())
+      async_handler handler = [](exception_list e) { glue::default_async_handler(e); }) {
+
+    if (deviceList.empty())
       throw exception{make_error_code(errc::platform),
                       "context: Cannot construct context for empty device list"};
 
     this->init(handler);
-    for(const device& dev : deviceList) {
+    for (const device &dev : deviceList) {
       _impl->devices.add(dev._device_id);
     }
     // Always need to add the host device
     _impl->devices.add(detail::get_host_device());
+
+    TRACER_FUNCTION2ARG(context_construction, this->AdaptiveCpp_hash_code());
   }
 
   explicit context(
       detail::default_context_tag_t,
-      async_handler handler =
-          [](exception_list e) { glue::default_async_handler(e); })
+      async_handler handler = [](exception_list e) { glue::default_async_handler(e); })
       : context{handler} {
     _impl->is_default_context = true;
   }
 
   explicit context(
       detail::default_context_tag_t, const device &dev,
-      async_handler handler =
-          [](exception_list e) { glue::default_async_handler(e); })
+      async_handler handler = [](exception_list e) { glue::default_async_handler(e); })
       : context{dev, handler} {
     _impl->is_default_context = true;
   }
 
   explicit context(
       detail::default_context_tag_t, const platform &plt,
-      async_handler handler =
-          [](exception_list e) { glue::default_async_handler(e); })
+      async_handler handler = [](exception_list e) { glue::default_async_handler(e); })
       : context{plt, handler} {
     _impl->is_default_context = true;
   }
 
   explicit context(
       detail::default_context_tag_t, const std::vector<device> &deviceList,
-      async_handler handler =
-          [](exception_list e) { glue::default_async_handler(e); })
+      async_handler handler = [](exception_list e) { glue::default_async_handler(e); })
       : context{deviceList, handler} {
     _impl->is_default_context = true;
   }
+
+  context(const context &other) : _impl(other._impl) {
+    TRACER_FUNCTION2ARG(context_construction, this->AdaptiveCpp_hash_code());
+  }
+
+  context(context &&other) : _impl(std::move(other._impl)) {
+    TRACER_FUNCTION2ARG(context_construction, this->AdaptiveCpp_hash_code());
+  }
+
+  context &operator=(const context &other) {
+    TRACER_FUNCTION2ARG(context_destruction, this->AdaptiveCpp_hash_code());
+    if (*this != other) {
+      this->_impl = other._impl;
+    }
+    TRACER_FUNCTION2ARG(context_construction, this->AdaptiveCpp_hash_code());
+    return *this;
+  }
+
+  context &operator=(context &&other) {
+    TRACER_FUNCTION2ARG(context_destruction, this->AdaptiveCpp_hash_code());
+    if (*this != other) {
+      this->_impl = std::move(other._impl);
+    }
+    TRACER_FUNCTION2ARG(context_construction, this->AdaptiveCpp_hash_code());
+    return *this;
+  }
+
+  ~context() { TRACER_FUNCTION2ARG(context_construction, this->AdaptiveCpp_hash_code()); }
 
   bool is_host() const {
     bool has_non_host_devices = false;
@@ -132,7 +158,7 @@ public:
     rt::platform_id last_platform;
 
     this->_impl->devices.for_each_backend([&](rt::backend_id b) {
-      rt::backend* backend = this->_impl->requires_runtime.get()->backends().get(b);
+      rt::backend *backend = this->_impl->requires_runtime.get()->backends().get(b);
 
       for (std::size_t platform_index = 0;
            platform_index < backend->get_hardware_manager()->get_num_platforms();
@@ -140,12 +166,11 @@ public:
         if (b != detail::get_host_device().get_backend()) {
           if (found_device_platform) {
             // We already have a device backend
-            HIPSYCL_DEBUG_WARNING
-                << "context: get_platform() was called but this context spans "
-                  "multiple backends/platforms. Only returning last platform"
-                << std::endl;
+            HIPSYCL_DEBUG_WARNING << "context: get_platform() was called but this context spans "
+                                     "multiple backends/platforms. Only returning last platform"
+                                  << std::endl;
           }
-          
+
           last_platform = rt::platform_id{b, static_cast<int>(platform_index)};
           found_device_platform = true;
         }
@@ -153,7 +178,7 @@ public:
     });
 
     if (!found_device_platform) {
-      last_platform = rt::platform_id{detail::get_host_device().get_backend(), 0}; 
+      last_platform = rt::platform_id{detail::get_host_device().get_backend(), 0};
     }
 
     return platform{last_platform};
@@ -161,47 +186,38 @@ public:
 
   std::vector<device> get_devices() const {
     std::vector<device> devs;
-    _impl->devices.for_each_device([&](rt::device_id d) {
-      devs.push_back(d);
-    });
+    _impl->devices.for_each_device([&](rt::device_id d) { devs.push_back(d); });
     return devs;
   }
 
-
-  template <typename Param>
-  typename Param::return_type get_info() const {
-    throw exception{make_error_code(errc::runtime),
-                    "context::get_info() is unimplemented"};
+  template <typename Param> typename Param::return_type get_info() const {
+    throw exception{make_error_code(errc::runtime), "context::get_info() is unimplemented"};
   }
 
   std::size_t AdaptiveCpp_hash_code() const {
-    if(_impl && _impl->is_default_context) {
+    if (_impl && _impl->is_default_context) {
       std::size_t hash = 0;
-      _impl->devices.for_each_device([&](rt::device_id dev){
+      _impl->devices.for_each_device([&](rt::device_id dev) {
         // xor ensures that device order does not matter
         hash ^= dev.hash_code();
       });
       return hash;
     }
-    return std::hash<void*>{}(_impl.get());
+    return std::hash<void *>{}(_impl.get());
   }
 
-  friend bool operator ==(const context& lhs, const context& rhs) {
+  friend bool operator==(const context &lhs, const context &rhs) {
 
-    if (lhs._impl && rhs._impl && lhs._impl->is_default_context &&
-        rhs._impl->is_default_context) {
+    if (lhs._impl && rhs._impl && lhs._impl->is_default_context && rhs._impl->is_default_context) {
       return lhs._impl->devices == rhs._impl->devices;
     }
 
     return lhs._impl == rhs._impl;
   }
 
-  friend bool operator!=(const context& lhs, const context &rhs)
-  { return !(lhs == rhs); }
+  friend bool operator!=(const context &lhs, const context &rhs) { return !(lhs == rhs); }
 
-  rt::runtime* AdaptiveCpp_runtime() const {
-    return _impl->requires_runtime.get();
-  }
+  rt::runtime *AdaptiveCpp_runtime() const { return _impl->requires_runtime.get(); }
 
   [[deprecated("Use AdaptiveCpp_hash_code()")]]
   auto hipSYCL_hash_code() const {
@@ -212,6 +228,7 @@ public:
   auto hipSYCL_runtime() const {
     return AdaptiveCpp_runtime();
   }
+
 private:
   void init(async_handler handler) {
     _impl = std::make_shared<context_impl>();
@@ -221,12 +238,12 @@ private:
   void init(async_handler handler, const device &d) {
     init(handler);
     _impl->devices.add(d._device_id);
-    if(!d.is_host()) {
+    if (!d.is_host()) {
       // Always need to add the host device
       _impl->devices.add(detail::get_host_device());
     }
   }
-  
+
   struct context_impl {
     rt::runtime_keep_alive_token requires_runtime;
     rt::unique_device_list devices;
@@ -240,15 +257,11 @@ private:
   std::shared_ptr<context_impl> _impl;
 };
 
+HIPSYCL_SPECIALIZE_GET_INFO(context, reference_count) { return _impl.use_count(); }
 
-HIPSYCL_SPECIALIZE_GET_INFO(context, reference_count)
-{ return _impl.use_count(); }
+HIPSYCL_SPECIALIZE_GET_INFO(context, platform) { return get_platform(); }
 
-HIPSYCL_SPECIALIZE_GET_INFO(context, platform)
-{ return get_platform(); }
-
-HIPSYCL_SPECIALIZE_GET_INFO(context, devices)
-{ return get_devices(); }
+HIPSYCL_SPECIALIZE_GET_INFO(context, devices) { return get_devices(); }
 
 namespace detail {
 
@@ -256,38 +269,31 @@ inline const rt::unique_device_list &extract_context_devices(const context &ctx)
   return ctx._impl->devices;
 }
 
-}
+} // namespace detail
 
 inline context platform::khr_get_default_context() const {
   return context{detail::default_context_tag_t{}, *this};
 }
 
-inline exception::exception(context ctx, std::error_code ec, const std::string& what_arg)
-  : _context{std::make_shared<context>(ctx)}, error_code{ec},
-    _msg{what_arg} {}
+inline exception::exception(context ctx, std::error_code ec, const std::string &what_arg)
+    : _context{std::make_shared<context>(ctx)}, error_code{ec}, _msg{what_arg} {}
 
-inline exception::exception(context ctx, std::error_code ec, const char* what_arg)
-    : _context{std::make_shared<context>(ctx)}, error_code{ec},
-      _msg{what_arg} {}
+inline exception::exception(context ctx, std::error_code ec, const char *what_arg)
+    : _context{std::make_shared<context>(ctx)}, error_code{ec}, _msg{what_arg} {}
 
 inline exception::exception(context ctx, std::error_code ec)
-  : _context{std::make_shared<context>(ctx)}, error_code{ec} {}
+    : _context{std::make_shared<context>(ctx)}, error_code{ec} {}
 
-inline exception::exception(context ctx, int ev, const std::error_category& ecat,
-                     const std::string& what_arg)
-  : _context{std::make_shared<context>(ctx)}, error_code{ev, ecat},
-    _msg{what_arg} {}
+inline exception::exception(context ctx, int ev, const std::error_category &ecat,
+                            const std::string &what_arg)
+    : _context{std::make_shared<context>(ctx)}, error_code{ev, ecat}, _msg{what_arg} {}
 
-inline exception::exception(context ctx, int ev,
-                            const std::error_category &ecat,
+inline exception::exception(context ctx, int ev, const std::error_category &ecat,
                             const char *what_arg)
-  : _context{std::make_shared<context>(ctx)},
-    error_code{ev, ecat}, _msg{what_arg} {}
+    : _context{std::make_shared<context>(ctx)}, error_code{ev, ecat}, _msg{what_arg} {}
 
-inline exception::exception(context ctx, int ev,
-                            const std::error_category &ecat)
-  : _context{std::make_shared<context>(ctx)},
-    error_code{ev, ecat} {}
+inline exception::exception(context ctx, int ev, const std::error_category &ecat)
+    : _context{std::make_shared<context>(ctx)}, error_code{ev, ecat} {}
 
 inline context exception::get_context() const {
   if (!has_context())
@@ -301,15 +307,12 @@ inline context exception::get_context() const {
 
 namespace std {
 
-template <>
-struct hash<hipsycl::sycl::context>
-{
-  std::size_t operator()(const hipsycl::sycl::context& c) const
-  {
+template <> struct hash<hipsycl::sycl::context> {
+  std::size_t operator()(const hipsycl::sycl::context &c) const {
     return c.AdaptiveCpp_hash_code();
   }
 };
 
-}
+} // namespace std
 
 #endif

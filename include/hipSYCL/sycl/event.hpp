@@ -34,12 +34,49 @@ class event {
   friend class handler;
 
 public:
-  event() {}
+  event() { TRACER_FUNCTION2ARG(event_construction, this->AdaptiveCpp_hash_code()); }
 
   event(
       const rt::dag_node_ptr &evt,
       async_handler handler = [](exception_list e) { glue::default_async_handler(e); })
-      : _node{evt} {}
+      : _node{evt} {
+    TRACER_FUNCTION2ARG(event_construction, this->AdaptiveCpp_hash_code());
+  }
+
+  event(const event &other)
+      : _node{other._node}, _requires_runtime{other._requires_runtime}, _handler{other._handler} {
+    TRACER_FUNCTION2ARG(event_construction, this->AdaptiveCpp_hash_code());
+  }
+
+  event(event &&other) noexcept
+      : _node{std::move(other._node)}, _requires_runtime{std::move(other._requires_runtime)},
+        _handler{std::move(other._handler)} {
+    TRACER_FUNCTION2ARG(event_construction, this->AdaptiveCpp_hash_code());
+  }
+
+  event &operator=(const event &other) {
+    TRACER_FUNCTION2ARG(event_destruction, this->AdaptiveCpp_hash_code())
+    if (this != &other) {
+      _node = other._node;
+      _requires_runtime = other._requires_runtime;
+      _handler = other._handler;
+    }
+    TRACER_FUNCTION2ARG(event_construction, this->AdaptiveCpp_hash_code());
+    return *this;
+  }
+
+  event &operator=(event &&other) {
+    TRACER_FUNCTION2ARG(event_construction, this->AdaptiveCpp_hash_code());
+    if (this != &other) {
+      _node = std::move(other._node);
+      _requires_runtime = std::move(other._requires_runtime);
+      _handler = std::move(other._handler);
+    }
+    TRACER_FUNCTION2ARG(event_construction, this->AdaptiveCpp_hash_code());
+    return *this;
+  }
+
+  ~event() { TRACER_FUNCTION2ARG(event_destruction, this->AdaptiveCpp_hash_code()); }
 
   std::vector<event> get_wait_list() {
     if (_node) {

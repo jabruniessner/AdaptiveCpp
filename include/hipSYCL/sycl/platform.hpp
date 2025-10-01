@@ -11,19 +11,18 @@
 #ifndef HIPSYCL_PLATFORM_HPP
 #define HIPSYCL_PLATFORM_HPP
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "hipSYCL/runtime/application.hpp"
 #include "hipSYCL/runtime/backend.hpp"
 #include "hipSYCL/runtime/device_id.hpp"
 
-#include "types.hpp"
 #include "backend.hpp"
 #include "device_selector.hpp"
 #include "info/info.hpp"
+#include "types.hpp"
 #include "version.hpp"
-
 
 namespace hipsycl {
 namespace sycl {
@@ -33,38 +32,75 @@ class device_selector;
 class platform {
 
 public:
-  platform() : _platform{detail::get_host_device().get_backend(), 0} {}
-  
+  platform()
+      : _platform{detail::get_host_device().get_backend(), 0} {
+          TRACER_FUNCTION2ARG(platform_construction, this->AdaptiveCpp_hash_code())
+        };
+
   platform(rt::platform_id platform)
-  : _platform{platform} {}
+      : _platform{platform} {
+          TRACER_FUNCTION2ARG(platform_construction, this->AdaptiveCpp_hash_code())
+        };
 
   platform(rt::backend_id backend, std::size_t platform_index)
-      : _platform{backend, static_cast<int>(platform_index)} {}
+      : _platform{backend, static_cast<int>(platform_index)} {
+          TRACER_FUNCTION2ARG(platform_construction, this->AdaptiveCpp_hash_code())
+        };
 
-  template<class DeviceSelector>
-  explicit platform(const DeviceSelector &deviceSelector) {
+  // Copy constructor
+  platform(const platform &other)
+      : _platform(other._platform), _requires_runtime(other._requires_runtime) {
+          TRACER_FUNCTION2ARG(platform_construction, this->AdaptiveCpp_hash_code())
+        };
+
+  // Copy constructor
+  platform(platform &&other)
+      : _platform(std::move(other._platform)),
+        _requires_runtime(std::move(other._requires_runtime)) {
+          TRACER_FUNCTION2ARG(platform_construction, this->AdaptiveCpp_hash_code())
+        };
+
+  // Assignment operator
+  platform &operator=(const platform &other) {
+
+    TRACER_FUNCTION2ARG(platform_destruction, this->AdaptiveCpp_hash_code())
+    if (*this != other) {
+      _platform = other._platform;
+      _requires_runtime = other._requires_runtime;
+    }
+    TRACER_FUNCTION2ARG(platform_construction, this->AdaptiveCpp_hash_code())
+    return *this;
+  };
+
+  platform &operator=(platform &&other) {
+
+    TRACER_FUNCTION2ARG(platform_destruction, this->AdaptiveCpp_hash_code())
+    if (*this != other) {
+      _platform = std::move(other._platform);
+      _requires_runtime = std::move(other._requires_runtime);
+    }
+    TRACER_FUNCTION2ARG(platform_construction, this->AdaptiveCpp_hash_code())
+    return *this;
+  };
+
+  ~platform() { TRACER_FUNCTION2ARG(platform_destruction, this->AdaptiveCpp_hash_code()) }
+
+  template <class DeviceSelector> explicit platform(const DeviceSelector &deviceSelector) {
     auto dev = detail::select_devices(deviceSelector)[0];
-    
-    rt::backend *b =
-        _requires_runtime.get()->backends().get(dev.get_backend());
-    std::size_t platform_index =
-        b->get_hardware_manager()
-            ->get_device(dev.AdaptiveCpp_device_id().get_id())
-            ->get_platform_index();
 
-    this->_platform =
-        rt::platform_id{dev.get_backend(), static_cast<int>(platform_index)};
+    rt::backend *b = _requires_runtime.get()->backends().get(dev.get_backend());
+    std::size_t platform_index = b->get_hardware_manager()
+                                     ->get_device(dev.AdaptiveCpp_device_id().get_id())
+                                     ->get_platform_index();
+
+    this->_platform = rt::platform_id{dev.get_backend(), static_cast<int>(platform_index)};
   }
 
-  backend get_backend() const noexcept {
-    return _platform.get_backend();
-  }
+  backend get_backend() const noexcept { return _platform.get_backend(); }
 
-  std::vector<device>
-  get_devices(info::device_type type = info::device_type::all) const {
+  std::vector<device> get_devices(info::device_type type = info::device_type::all) const {
     std::vector<device> result;
-    rt::backend *b =
-        _requires_runtime.get()->backends().get(_platform.get_backend());
+    rt::backend *b = _requires_runtime.get()->backends().get(_platform.get_backend());
 
     int num_devices = b->get_hardware_manager()->get_num_devices();
     for (int dev = 0; dev < num_devices; ++dev) {
@@ -74,8 +110,7 @@ public:
       bool include_device = false;
       if (b->get_hardware_manager()->get_device(dev)->get_platform_index() ==
           _platform.get_platform()) {
-        if (type == info::device_type::all ||
-            (type == info::device_type::accelerator && is_gpu) ||
+        if (type == info::device_type::all || (type == info::device_type::accelerator && is_gpu) ||
             (type == info::device_type::gpu && is_gpu) ||
             (type == info::device_type::host && is_cpu) ||
             (type == info::device_type::cpu && is_cpu)) {
@@ -86,23 +121,19 @@ public:
       if (include_device)
         result.push_back(device{rt::device_id{b->get_backend_descriptor(), dev}});
     }
-  
+
     return result;
   }
 
-
-  template <typename Param>
-  typename Param::return_type get_info() const;
-
+  template <typename Param> typename Param::return_type get_info() const;
 
   /// \todo Think of a better solution
-  bool has_extension(const std::string &extension) const {
-    return false;
-  }
-
+  bool has_extension(const std::string &extension) const { return false; }
 
   bool is_host() const {
-    return _requires_runtime.get()->backends().get(_platform.get_backend())
+    return _requires_runtime.get()
+               ->backends()
+               .get(_platform.get_backend())
                ->get_backend_descriptor()
                .hw_platform == rt::hardware_platform::cpu;
   }
@@ -111,8 +142,8 @@ public:
   /// specified aspect
   bool has(aspect asp) const {
     auto devs = get_devices();
-    for(const device& d : devs) {
-      if(!d.has(asp))
+    for (const device &d : devs) {
+      if (!d.has(asp))
         return false;
     }
     return true;
@@ -123,8 +154,7 @@ public:
     rt::runtime_keep_alive_token requires_runtime;
 
     requires_runtime.get()->backends().for_each_backend([&](rt::backend *b) {
-      for (std::size_t i = 0;
-           i < b->get_hardware_manager()->get_num_platforms(); ++i) {
+      for (std::size_t i = 0; i < b->get_hardware_manager()->get_num_platforms(); ++i) {
         result.push_back(platform{b->get_unique_backend_id(), i});
       }
     });
@@ -136,78 +166,55 @@ public:
     return lhs._platform == rhs._platform;
   }
 
-  friend bool operator!=(const platform &lhs, const platform &rhs) {
-    return !(lhs == rhs);
-  }
+  friend bool operator!=(const platform &lhs, const platform &rhs) { return !(lhs == rhs); }
 
-  std::size_t AdaptiveCpp_hash_code() const {
-    return std::hash<rt::platform_id>{}(_platform);
-  }
-
+  std::size_t AdaptiveCpp_hash_code() const { return std::hash<rt::platform_id>{}(_platform); }
 
   [[deprecated("Use AdaptiveCpp_hash_code()")]]
   auto hipSYCL_hash_code() const {
     return AdaptiveCpp_hash_code();
   }
 
-  
   context khr_get_default_context() const;
+
 private:
   rt::platform_id _platform;
   rt::runtime_keep_alive_token _requires_runtime;
 };
 
+HIPSYCL_SPECIALIZE_GET_INFO(device, platform) { return this->get_platform(); }
 
-HIPSYCL_SPECIALIZE_GET_INFO(device, platform)
-{ return this->get_platform(); }
+HIPSYCL_SPECIALIZE_GET_INFO(platform, profile) { return "FULL_PROFILE"; }
 
-HIPSYCL_SPECIALIZE_GET_INFO(platform, profile)
-{ return "FULL_PROFILE"; }
+HIPSYCL_SPECIALIZE_GET_INFO(platform, version) { return detail::version_string(); }
 
-HIPSYCL_SPECIALIZE_GET_INFO(platform, version)
-{
-  return detail::version_string();
-}
-
-HIPSYCL_SPECIALIZE_GET_INFO(platform, name)
-{
+HIPSYCL_SPECIALIZE_GET_INFO(platform, name) {
   rt::backend_id b = _platform.get_backend();
-  std::string platform_name =
-      _requires_runtime.get()->backends().get(b)->get_name();
-  platform_name +=
-      " (platform " + std::to_string(_platform.get_platform()) + ")";
-      return platform_name;
+  std::string platform_name = _requires_runtime.get()->backends().get(b)->get_name();
+  platform_name += " (platform " + std::to_string(_platform.get_platform()) + ")";
+  return platform_name;
 }
 
-HIPSYCL_SPECIALIZE_GET_INFO(platform, vendor)
-{
-  return "The AdaptiveCpp project";
-}
+HIPSYCL_SPECIALIZE_GET_INFO(platform, vendor) { return "The AdaptiveCpp project"; }
 
-HIPSYCL_SPECIALIZE_GET_INFO(platform, extensions)
-{
-  return std::vector<std::string>{};
-}
+HIPSYCL_SPECIALIZE_GET_INFO(platform, extensions) { return std::vector<std::string>{}; }
 
-inline platform device::get_platform() const  {
+inline platform device::get_platform() const {
   return platform{_device_id.get_backend(),
                   static_cast<size_t>(get_rt_device()->get_platform_index())};
 }
 
-}// namespace sycl
-}// namespace hipsycl
+} // namespace sycl
+} // namespace hipsycl
 
 namespace std {
 
-template <>
-struct hash<hipsycl::sycl::platform>
-{
-  std::size_t operator()(const hipsycl::sycl::platform& p) const
-  {
+template <> struct hash<hipsycl::sycl::platform> {
+  std::size_t operator()(const hipsycl::sycl::platform &p) const {
     return p.AdaptiveCpp_hash_code();
   }
 };
 
-}
+} // namespace std
 
 #endif

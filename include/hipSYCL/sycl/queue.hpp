@@ -247,9 +247,48 @@ public:
     // add any hints regarding target device.
 
     this->init();
+
+    TRACER_FUNCTION2ARG(queue_construction, this->AdaptiveCpp_hash_code());
   }
 
-  ~queue() { this->throw_asynchronous(); }
+  queue(const queue &other) : detail::property_carrying_object{other} {
+    _impl = other._impl;
+    TRACER_FUNCTION2ARG(queue_construction, this->AdaptiveCpp_hash_code());
+  }
+
+  queue(queue &&other) noexcept : detail::property_carrying_object{std::move(other)} {
+    _impl = std::move(other._impl);
+    TRACER_FUNCTION2ARG(queue_construction, this->AdaptiveCpp_hash_code());
+  }
+
+  queue &operator=(const queue &other) {
+
+    TRACER_FUNCTION2ARG(queue_construction, this->AdaptiveCpp_hash_code());
+    if (this != &other) {
+      detail::property_carrying_object::operator=(other);
+      _impl = other._impl;
+    }
+
+    TRACER_FUNCTION2ARG(queue_destruction, this->AdaptiveCpp_hash_code());
+    return *this;
+  }
+
+  queue &operator=(queue &&other) noexcept {
+
+    TRACER_FUNCTION2ARG(queue_construction, this->AdaptiveCpp_hash_code());
+    if (this != &other) {
+      detail::property_carrying_object::operator=(std::move(other));
+      _impl = std::move(other._impl);
+    }
+
+    TRACER_FUNCTION2ARG(queue_destruction, this->AdaptiveCpp_hash_code());
+    return *this;
+  }
+
+  ~queue() {
+    this->throw_asynchronous();
+    TRACER_FUNCTION2ARG(queue_destruction, this->AdaptiveCpp_hash_code());
+  }
 
   context get_context() const { return _impl->ctx; }
 
@@ -450,16 +489,17 @@ public:
 
       if (!submission_failed) {
 
-        TRACER_FUNCTION3ARG(submit_secondary_end, evt.AdaptiveCpp_hash_code(),
-                            _impl->node_group_id);
+        TRACER_FUNCTION_VA_ARGS(submit_secondary_end, evt.AdaptiveCpp_hash_code(),
+                                _impl->node_group_id, this->is_in_order());
 
         return evt;
       } else {
 
         event evt = secondaryQueue.submit(prop_list, cgf);
 
-        TRACER_FUNCTION3ARG(submit_secondary_end, evt.AdaptiveCpp_hash_code(),
-                            _impl->node_group_id);
+        TRACER_FUNCTION_VA_ARGS(submit_secondary_end, evt.AdaptiveCpp_hash_code(),
+                                _impl->node_group_id, this->is_in_order());
+        ;
 
         return evt;
       }
@@ -467,7 +507,8 @@ public:
 
       event evt = secondaryQueue.submit(prop_list, cgf);
 
-      TRACER_FUNCTION3ARG(submit_secondary_end, evt.AdaptiveCpp_hash_code(), _impl->node_group_id);
+      TRACER_FUNCTION_VA_ARGS(submit_secondary_end, evt.AdaptiveCpp_hash_code(),
+                              _impl->node_group_id, this->is_in_order());
 
       return evt;
     }

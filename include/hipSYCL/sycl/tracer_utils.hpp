@@ -28,6 +28,9 @@ typedef void (*tracer_function_wait_t)(void *state, hashtype event);
 typedef void (*tracer_function_depends_on_t)(void *state, hashtype event);
 typedef void (*finalizer_function_t)(void *);
 
+typedef void (*constructor_function_t)(void *state, std::size_t hash);
+typedef void (*destructor_function_t)(void *state, std::size_t hash);
+
 ALL_TYPES(INIT_FUNCTIONS);
 
 #ifdef __cplusplus

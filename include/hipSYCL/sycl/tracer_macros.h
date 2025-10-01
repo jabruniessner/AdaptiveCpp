@@ -4,6 +4,28 @@
 #define TRACER_MACROS_H
 
 #define ALL_TYPES(MACRO)                                                                           \
+  MACRO(queue_construction, constructor_function_t)                                                \
+  MACRO(queue_destruction, destructor_function_t)                                                  \
+  MACRO(accessor_construction, constructor_function_t)                                             \
+  MACRO(accessor_destruction, destructor_function_t)                                               \
+  MACRO(buffer_construction, constructor_function_t)                                               \
+  MACRO(buffer_destruction, destructor_function_t)                                                 \
+  MACRO(context_construction, constructor_function_t)                                              \
+  MACRO(context_destruction, destructor_function_t)                                                \
+  MACRO(device_construction, constructor_function_t)                                               \
+  MACRO(device_destruction, destructor_function_t)                                                 \
+  MACRO(device_image_construction, constructor_function_t)                                         \
+  MACRO(device_image_destruction, destructor_function_t)                                           \
+  MACRO(event_construction, constructor_function_t)                                                \
+  MACRO(event_destruction, destructor_function_t)                                                  \
+  MACRO(host_accessor_construction, constructor_function_t)                                        \
+  MACRO(host_accessor_destruction, destructor_function_t)                                          \
+  MACRO(platform_construction, constructor_function_t)                                             \
+  MACRO(platform_destruction, destructor_function_t)                                               \
+  MACRO(local_accessor_construction, constructor_function_t)                                       \
+  MACRO(local_accessor_destruction, destructor_function_t)                                         \
+  MACRO(stream_construction, constructor_function_t)                                               \
+  MACRO(stream_destruction, destructor_function_t)                                                 \
   MACRO(submit_start, tracer_function_t);                                                          \
   MACRO(submit_end, tracer_function_submit_t);                                                     \
   MACRO(submit_secondary_start, tracer_function_t);                                                \
