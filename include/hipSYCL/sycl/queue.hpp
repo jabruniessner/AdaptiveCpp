@@ -263,25 +263,26 @@ public:
 
   queue &operator=(const queue &other) {
 
-    TRACER_FUNCTION2ARG(queue_construction, this->AdaptiveCpp_hash_code());
+    TRACER_FUNCTION2ARG(queue_destruction, this->AdaptiveCpp_hash_code());
     if (this != &other) {
       detail::property_carrying_object::operator=(other);
       _impl = other._impl;
     }
 
-    TRACER_FUNCTION2ARG(queue_destruction, this->AdaptiveCpp_hash_code());
+    TRACER_FUNCTION2ARG(queue_construction, this->AdaptiveCpp_hash_code());
     return *this;
   }
 
   queue &operator=(queue &&other) noexcept {
 
-    TRACER_FUNCTION2ARG(queue_construction, this->AdaptiveCpp_hash_code());
+    TRACER_FUNCTION2ARG(queue_destruction, this->AdaptiveCpp_hash_code());
+
     if (this != &other) {
       detail::property_carrying_object::operator=(std::move(other));
       _impl = std::move(other._impl);
     }
 
-    TRACER_FUNCTION2ARG(queue_destruction, this->AdaptiveCpp_hash_code());
+    TRACER_FUNCTION2ARG(queue_construction, this->AdaptiveCpp_hash_code());
     return *this;
   }
 
