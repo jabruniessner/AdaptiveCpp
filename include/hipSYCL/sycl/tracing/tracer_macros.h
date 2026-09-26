@@ -1,4 +1,6 @@
+#ifdef __cplusplus
 #include <vector>
+#endif
 
 #ifndef ACPP_TRACER_MACROS_H
 #define ACPP_TRACER_MACROS_H
@@ -52,6 +54,9 @@
   ALL_TYPES_NOSTATE(MACRO)                                                     \
   MACRO(states, void *);
 
+
+#ifdef __cplusplus
+
 #define MEMBER_VECTOR(name, type) std::vector<type> name;
 
 #define ACPP_TRACER_FUNCTION_VA_ARGS(type, ...)                                     \
@@ -64,6 +69,8 @@
 
 #define INIT_FUNCTIONS(type, arg_type)                                         \
   void init_##type(arg_type);
+
+#endif
 
 #ifndef _WIN32
 #define ACPP_COMMON_IMPORT
